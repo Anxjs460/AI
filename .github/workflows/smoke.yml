@@ -42,6 +42,6 @@ jobs:
           ls -lh models/
           ./build/bin/llama-cli \
             -m models/DeepSeek-R1-Distill-Qwen-1.5B-Q5_K_M.gguf \
-            -p "用一句话介绍你自己" \
-            -n 128 \
+            -p "用 Python 写一个快速排序函数，带注释" \
+            -n 3028 \
             -st
