@@ -1,0 +1,47 @@
+name: build-and-smoke-ai
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libcurl4-openssl-dev
+
+      - name: Clone llama.cpp
+        run: |
+          git clone --depth 1 https://github.com/ggerganov/llama.cpp.git
+          cd llama.cpp
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=ON
+          cmake --build build -j$(nproc)
+          mkdir -p ../build/bin
+          cp build/bin/llama-cli ../build/bin/ || true
+          ls -lh ../build/bin/
+
+      - name: Cache model
+        uses: actions/cache@v4
+        with:
+          path: models
+          key: deepseek-r1-1.5b-q5
+
+      - name: Smoke test DeepSeek 1.5B
+        run: |
+          pip install -U "huggingface_hub[cli]"
+          hf download DhruvalLabs/DeepSeek-R1-Distill-Qwen-1.5B-GGUF \
+            DeepSeek-R1-Distill-Qwen-1.5B-Q5_K_M.gguf \
+            --local-dir models
+          ls -lh models/
+          ./build/bin/llama-cli \
+            -m models/DeepSeek-R1-Distill-Qwen-1.5B-Q5_K_M.gguf \
+            -p "用一句话介绍你自己" \
+            -n 128 \
+            --no-conversation
