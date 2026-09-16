@@ -17,9 +17,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential cmake libcurl4-openssl-dev
 
-      - name: Clone llama.cpp
+      - name: Cache llama.cpp
+        uses: actions/cache@v4
+        with:
+          path: |
+            llama.cpp
+          key: ${{ runner.os }}-llama-src-${{ hashFiles('**/CMakeLists.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-llama-src-
+
+      - name: Clone and build llama.cpp
         run: |
-          git clone --depth 1 https://github.com/ggerganov/llama.cpp.git
+          if [ ! -d llama.cpp ]; then
+            git clone --depth 1 https://github.com/ggerganov/llama.cpp.git
+          fi
           cd llama.cpp
           cmake -B build -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=ON
           cmake --build build -j$(nproc)
